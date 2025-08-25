@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import moviesRouter from "./routes/movies";
+import commentsRouter from "./routes/comments"
 
 const app = express();
 app.use(cors());
@@ -10,6 +11,7 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.get("/", (_req, res) => res.json({ message: "Hello from Express + TS!" }));
 
 app.use("/movies", moviesRouter);
+app.use("/", commentsRouter); 
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`API on http://localhost:${port}`));

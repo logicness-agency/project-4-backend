@@ -1,55 +1,63 @@
 import { Router, Request, Response } from "express";
+import { PrismaClient } from "../generated/prisma";
 
-type Movie = { id: number; title: string; year?: number; genre?: string };
+const prisma = new PrismaClient();
 const router = Router();
 
-let nextId = 1;
-const movies: Movie[] = [];
-
-router.get("/", (_req: Request, res: Response) => res.json(movies));
-
-router.get("/:id", (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  const m = movies.find(x => x.id === id);
-  if (!m) return res.status(404).json({ error: "not found" });
-  res.json(m);
+// GET all movies
+router.get("/", async (_req: Request, res: Response) => {
+  const movies = await prisma.movie.findMany({
+    include: { comments: true },
+  });
+  res.json(movies);
 });
 
-router.post("/", (req: Request, res: Response) => {
-  const { title, year, genre } = req.body as Partial<Movie>;
-  if (!title || !title.trim()) return res.status(400).json({ error: "title required" });
-  const movie: Movie = { id: nextId++, title: title.trim(), year, genre };
-  movies.unshift(movie);
+// GET single movie
+router.get("/:id", async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const movie = await prisma.movie.findUnique({
+    where: { id },
+    include: { comments: true },
+  });
+  if (!movie) return res.status(404).json({ error: "not found" });
+  res.json(movie);
+});
+
+// POST create movie
+router.post("/", async (req: Request, res: Response) => {
+  const { title, year, genre } = req.body;
+  if (!title?.trim()) return res.status(400).json({ error: "title required" });
+
+  const movie = await prisma.movie.create({
+    data: { title: title.trim(), year, genre },
+  });
   res.status(201).json(movie);
 });
 
-router.put("/:id", (req: Request, res: Response) => {
+// PUT update movie
+router.put("/:id", async (req: Request, res: Response) => {
   const id = Number(req.params.id);
-  const idx = movies.findIndex(x => x.id === id);
-  if (idx === -1) return res.status(404).json({ error: "not found" });
-  const { title, year, genre } = req.body as Partial<Movie>;
-  if (!title || !title.trim()) return res.status(400).json({ error: "title required" });
-  movies[idx] = { id, title: title.trim(), year, genre };
-  res.json(movies[idx]);
+  const { title, year, genre } = req.body;
+  try {
+    const movie = await prisma.movie.update({
+      where: { id },
+      data: { title: title.trim(), year, genre },
+    });
+    res.json(movie);
+  } catch {
+    res.status(404).json({ error: "not found" });
+  }
 });
 
-router.patch("/:id", (req: Request, res: Response) => {
+// DELETE movie
+router.delete("/:id", async (req: Request, res: Response) => {
   const id = Number(req.params.id);
-  const m = movies.find(x => x.id === id);
-  if (!m) return res.status(404).json({ error: "not found" });
-  const { title, year, genre } = req.body as Partial<Movie>;
-  if (title !== undefined) m.title = title.trim();
-  if (year !== undefined) m.year = year;
-  if (genre !== undefined) m.genre = genre;
-  res.json(m);
-});
-
-router.delete("/:id", (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  const idx = movies.findIndex(x => x.id === id);
-  if (idx === -1) return res.status(404).json({ error: "not found" });
-  movies.splice(idx, 1);
-  res.status(204).send();
+  try {
+    await prisma.movie.delete({ where: { id } });
+    res.sendStatus(204);
+  } catch {
+    res.status(404).json({ error: "not found" });
+  }
 });
 
 export default router;
