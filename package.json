@@ -2,12 +2,11 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "build": "tsc && cp -r ./src/generated dist/generated",
-    "postinstall": "prisma generate",
-    "start": "node dist/server.js",
-    "dev": "ts-node-dev src/server.ts"
-  },
+ "scripts": {
+  "dev": "ts-node-dev src/server.ts",
+  "build": "tsc && prisma generate",
+  "start": "node dist/server.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
