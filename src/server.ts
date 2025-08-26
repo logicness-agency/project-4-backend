@@ -8,6 +8,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (_req, res) => {
+  res.json({ message: "Welcome to the MovieTracker API", endpoints: ["/health", "/movies"] });
+});
+
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/movies", moviesRouter);
